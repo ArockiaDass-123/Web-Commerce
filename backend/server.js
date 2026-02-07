@@ -36,16 +36,22 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce';
 
+// Attempt to connect to MongoDB but don't crash the process if it fails.
+// In cloud environments (like Render) there may not be a MongoDB on localhost;
+// set `MONGODB_URI` to your production DB (Atlas, etc.).
 mongoose.connect(MONGODB_URI)
     .then(() => {
         console.log('Connected to MongoDB');
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
-        });
     })
     .catch((error) => {
         console.error('MongoDB connection error:', error);
-        process.exit(1);
+        console.error('\nWarning: the app will continue running without a MongoDB connection.');
+        console.error('If you deployed to a host, set `MONGODB_URI` to a reachable database (e.g. MongoDB Atlas).');
+    })
+    .finally(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
     });
 
 module.exports = app;
