@@ -73,12 +73,15 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecomme
 const { seedDatabase } = require('./seedProducts');
 const Item = require('./models/Item');
 
+let lastDbError = null;
+
 // Attempt to connect to MongoDB but don't crash the process if it fails.
 // In cloud environments (like Render) there may not be a MongoDB on localhost;
 // set `MONGODB_URI` to your production DB (Atlas, etc.).
 mongoose.connect(MONGODB_URI)
     .then(async () => {
         console.log('Connected to MongoDB');
+        lastDbError = null;
 
         // Auto-seed if database is empty
         try {
@@ -92,17 +95,54 @@ mongoose.connect(MONGODB_URI)
             }
         } catch (err) {
             console.error('Auto-seeding failed:', err);
+            lastDbError = err.message;
         }
     })
     .catch((error) => {
         console.error('MongoDB connection error:', error);
         console.error('\nWarning: the app will continue running without a MongoDB connection.');
         console.error('If you deployed to a host, set `MONGODB_URI` to a reachable database (e.g. MongoDB Atlas).');
+        lastDbError = error.message;
     })
     .finally(() => {
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });
     });
+
+// Diagnostic Endpoint
+app.get('/api/status', async (req, res) => {
+    try {
+        const dbStatus = mongoose.connection.readyState; // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
+        const statusMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+
+        let itemCount = 0;
+        if (dbStatus === 1) {
+            itemCount = await Item.countDocuments();
+        }
+
+        const response = {
+            status: 'ok',
+            database: {
+                state: statusMap[dbStatus] || 'unknown',
+                itemCount: itemCount,
+                connectionString: process.env.MONGODB_URI ? 'Set (Hidden)' : 'Not Set',
+                lastError: lastDbError
+            }
+        };
+
+        // Manual seed trigger via query param: ?seed=true
+        if (req.query.seed === 'true' && dbStatus === 1) {
+            console.log('Manual seed requested via API');
+            await seedDatabase(false);
+            response.seed = 'Triggered manual seed';
+            response.database.itemCount = await Item.countDocuments();
+        }
+
+        res.json(response);
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
 
 module.exports = app;
