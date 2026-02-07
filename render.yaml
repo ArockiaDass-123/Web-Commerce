@@ -1,0 +1,15 @@
+# Render.yaml
+
+# Configuration for build and deployment
+# This file is used to set up the build and deployment for the application.
+
+services:
+  web:
+    type: web
+    name: web-service
+    env: node
+    plan: starter
+    buildCommand: 'npm install && npm run build'
+    startCommand: 'npm run start'
+    staticPublishPath: 'build'
+    autoDeploy: true
