@@ -56,11 +56,9 @@ const products = [
     { productId: 'P50', name: 'Electric Toothbrush', category: 'Personal Care', brand: 'Oral-B', price: 2499, rating: 4.6, reviewsCount: 9100, badge: 'Bestseller', imageUrl: 'https://images.unsplash.com/photo-1606813902917-6cbb0f2cbb1f?w=400', description: 'Superior cleaning' }
 ];
 
-async function seedProducts() {
+async function seedDatabase(closeConnection = true) {
     try {
-        // Connect to MongoDB
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce');
-        console.log('Connected to MongoDB');
+        console.log('Seeding database...');
 
         // Clear existing items
         await Item.deleteMany({});
@@ -70,14 +68,25 @@ async function seedProducts() {
         await Item.insertMany(products);
         console.log(`Successfully seeded ${products.length} products`);
 
-        // Close connection
-        await mongoose.connection.close();
-        console.log('Database connection closed');
-        process.exit(0);
+        if (closeConnection) {
+            console.log('Closing database connection...');
+            await mongoose.connection.close();
+            console.log('Database connection closed');
+        }
     } catch (error) {
         console.error('Error seeding products:', error);
-        process.exit(1);
+        throw error;
     }
 }
 
-seedProducts();
+// If running directly, connect and seed
+if (require.main === module) {
+    mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce')
+        .then(() => seedDatabase(true))
+        .catch(err => {
+            console.error('Database connection error:', err);
+            process.exit(1);
+        });
+}
+
+module.exports = { seedDatabase };

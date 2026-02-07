@@ -36,12 +36,29 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce';
 
+const { seedDatabase } = require('./seedProducts');
+const Item = require('./models/Item');
+
 // Attempt to connect to MongoDB but don't crash the process if it fails.
 // In cloud environments (like Render) there may not be a MongoDB on localhost;
 // set `MONGODB_URI` to your production DB (Atlas, etc.).
 mongoose.connect(MONGODB_URI)
-    .then(() => {
+    .then(async () => {
         console.log('Connected to MongoDB');
+
+        // Auto-seed if database is empty
+        try {
+            const count = await Item.countDocuments();
+            if (count === 0) {
+                console.log('Database is empty. seeding initial data...');
+                await seedDatabase(false); // false means don't close connection
+                console.log('Auto-seeding completed');
+            } else {
+                console.log(`Database has ${count} items. Skipping seed.`);
+            }
+        } catch (err) {
+            console.error('Auto-seeding failed:', err);
+        }
     })
     .catch((error) => {
         console.error('MongoDB connection error:', error);
