@@ -5,6 +5,9 @@ import Login from './components/Login';
 import ProductsPage from './pages/ProductsPage';
 import axios from 'axios';
 
+// Set axios default base URL for backend
+axios.defaults.baseURL = 'https://web-commerce-backend.onrender.com';
+
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [loading, setLoading] = useState(true);
