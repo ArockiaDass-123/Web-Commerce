@@ -3,10 +3,11 @@ services:
   - type: web
     name: ecommerce-backend
     env: node
+    rootDir: backend
     region: oregon
     plan: free
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -21,10 +22,12 @@ services:
   - type: web
     name: ecommerce-frontend
     env: static
+    rootDir: frontend
     region: oregon
     plan: free
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/dist
+    # install dev dependencies (including vite) even if NODE_ENV is production
+    buildCommand: npm install --production=false && npm run build
+    staticPublishPath: ./dist
     routes:
       - type: rewrite
         source: /*
