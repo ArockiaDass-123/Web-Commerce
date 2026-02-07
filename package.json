@@ -2,12 +2,14 @@
     "name": "ecommerce-shopping-cart",
     "version": "1.0.0",
     "description": "Complete e-commerce shopping cart application with Node.js backend and React frontend",
-    "scripts": {
+        "scripts": {
         "install-all": "cd backend && npm install && cd ../frontend && npm install",
         "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
         "start-backend": "cd backend && npm start",
-        "start-frontend": "cd frontend && npm run dev"
+        "start-frontend": "cd frontend && npm run dev",
+        "build": "cd frontend && npm install && npm run build"
     },
+
     "keywords": [
         "ecommerce",
         "shopping-cart",
