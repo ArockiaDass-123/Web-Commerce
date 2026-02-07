@@ -26,6 +26,40 @@ app.get('/', (req, res) => {
     res.json({ message: 'E-Commerce API is running' });
 });
 
+// Diagnostic Endpoint
+app.get('/api/status', async (req, res) => {
+    try {
+        const dbStatus = mongoose.connection.readyState; // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
+        const statusMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+
+        let itemCount = 0;
+        if (dbStatus === 1) {
+            itemCount = await Item.countDocuments();
+        }
+
+        const response = {
+            status: 'ok',
+            database: {
+                state: statusMap[dbStatus] || 'unknown',
+                itemCount: itemCount,
+                connectionString: process.env.MONGODB_URI ? 'Set (Hidden)' : 'Not Set'
+            }
+        };
+
+        // Manual seed trigger via query param: ?seed=true
+        if (req.query.seed === 'true' && dbStatus === 1) {
+            console.log('Manual seed requested via API');
+            await seedDatabase(false);
+            response.seed = 'Triggered manual seed';
+            response.database.itemCount = await Item.countDocuments();
+        }
+
+        res.json(response);
+    } catch (error) {
+        res.status(500).json({ status: 'error', error: error.message });
+    }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
